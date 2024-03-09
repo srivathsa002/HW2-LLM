@@ -1,0 +1,338 @@
+INFO:root:Creating Config from file: ./gentpool/pool/Bahubali/agent.yaml
+INFO:root:Starting to load configuration from ./gentpool/pool/Bahubali/agent.yaml
+INFO:root:Successfully loaded configuration from ./gentpool/pool/Bahubali/agent.yaml
+INFO:root:--------------------
+INFO:root:[green]Welcome to Gentopia!
+INFO:root:--------------------
+INFO:root:[green]User: 
+INFO:root:Bahubali is thinking...
+INFO:root:Done
+INFO:root:[blue]Bahubali: 
+INFO:root:{"name":"search_single_paper", "arguments":{"title":"A Foundation Model for Network Traffic","top_k":1}}
+
+INFO:root:Calling function: search_single_paper ...
+INFO:scholarly:Getting https://scholar.google.com/scholar?hl=en&q=A%20Foundation%20Model%20for%20Network%20Traffic
+INFO:httpx:HTTP Request: GET https://scholar.google.com/scholar?hl=en&q=A%20Foundation%20Model%20for%20Network%20Traffic "HTTP/1.1 200 OK"
+INFO:root:Done
+INFO:root:--------------------
+INFO:root:{'title': 'Lens: A Foundation Model for Network Traffic', 'author': ['Q Wang', 'C Qian', 'X Li', 'Z Yao', 'H Shao'], 'pub_year': '2024', 'venue': 'arXiv preprint arXiv:2402.03646', 'abstract': 'traffic understanding (classification) or traffic generation tasks. To address this issue, we  develop Lens, a foundational network traffic model  generative ability, our model can better learn', 'url': 'https://arxiv.org/abs/2402.03646', 'citation': 0}
+INFO:root:--------------------
+INFO:root:Bahubali is thinking...
+INFO:root:Done
+INFO:root:[blue]Bahubali: 
+INFO:root:{"name":"read_pdf", "arguments":{"path":"https://arxiv.org/pdf/2402.03646"}}
+
+INFO:root:Calling function: read_pdf ...
+INFO:root:Done
+INFO:root:--------------------
+INFO:root:
+
+Lens : A F OUNDATION MODEL FOR NETWORK TRAFFIC
+INCYBERSECURITY
+Qineng Wang
+School of Computer Science
+Zhejiang University and William & Mary
+wongqineng73@zju.edu.cnChen Qian
+Department of Computer Science
+William & Mary
+cqian03@wm.edu
+Xiaochang Li
+Department of Computer Science
+William & Mary
+xli59@wm.eduZiyu Yao
+Department of Computer Science
+George Mason University
+ziyuyao@gmu.eduHuajie Shao
+Department of Computer Science
+William & Mary
+hshao@wm.edu
+ABSTRACT
+Network traffic refers to the amount of data being sent and received over the internet or any system
+that connects computers. Analyzing and understanding network traffic is vital for improving network
+security and management. However, the analysis of network traffic is challenging due to the diverse
+nature of data packets, which often feature heterogeneous headers and encrypted payloads lacking
+semantics. To capture the latent semantics of traffic, a few studies have adopted pre-training techniques
+based on the Transformer encoder or decoder to learn the representations from massive traffic data.
+However, these methods typically excel in traffic understanding (classification) or traffic generation
+tasks. To address this issue, we develop Lens , a foundation model for network traffic that leverages the
+T5 architecture to learn the pre-trained representations from large-scale unlabeled data. Harnessing the
+strength of the encoder-decoder framework, which captures the global information while preserving
+the generative ability, our model can better learn the representations from raw data. To further
+enhance pre-training effectiveness, we design a novel loss that combines three distinct tasks: Masked
+Span Prediction (MSP), Packet Order Prediction (POP), and Homologous Traffic Prediction (HTP).
+Evaluation results across various benchmark datasets demonstrate that the proposed Lens outperforms
+the baselines in most downstream tasks related to both traffic understanding and generation. Notably,
+it also requires much less labeled data for fine-tuning compared to current methods.
+1 Introduction
+In the realm of computer networking, network traffic is defined as the flow of data, transmitted in the form of packets
+between interconnected computers or systems. Typically, a packet consists of two parts: the header and the payload. The
+header provides essential information regarding the packet like IP address and payload length, while the payload contains
+the actual data, which may be encrypted. Given the critical role of network traffic, analyzing this data is crucial to ensure
+high network security, offer high-quality network services, and facilitate effective network management. However,
+analyzing network traffic poses a big challenge due to the complex characteristics of network traffic, encompassing
+both ciphertext and plaintext.
+Over the past decades, many approaches have been developed for network traffic analysis. Early works [ 36,1,28,42]
+mainly utilized statistical methods, heavily dependent on manually crafted features. To address this issue, some studies
+have employed deep learning methods [ 34,21,23,39] to extract complicated features from raw data. While these
+approaches have shown impressive results in specific tasks, they often require extensive labeled data and struggle
+with generalization to novel tasks. Consequently, few recent works have explored pre-training techniques to learn the
+latent representations from large-scale unlabeled traffic data. For instance, some works have introduced BERT-based
+models [ 8,19] to learn the pre-trained representations, subsequently applied to traffic understanding (classification) in
+downstream tasks. Despite their effectiveness in traffic classification, these models lack generative capabilities due toarXiv:2402.03646v2  [cs.LG]  9 Feb 2024APREPRINT - FEBRUARY 12, 2024
+Flow ExtractionAnonymize Hex Form
+Tokenization
+4500 0046 0763 … 
+<head> 5e9c 0110 
+0000 … <pkt> </s>
+10110101
+Pcap FileInput:4500 <extra_id_1> 0763 … <extra_id_2> 
+0000 … <pkt> </s>
+Target: <extra_id_1> 0046 <extra_id_2> 5e9c 
+0100 … </s>Masked Span Prediction –Encoder & Decoder 
+Input:4500 … <head> … e077 <pkt> … 0906 
+<pkt> … 0001 <pkt> </s>
+Target: 2 3 1Packet Order Prediction –Encoder Only 
+Input:4500 … <head> … e077 <pkt> … 0906 
+<pkt> … 0001 <pkt> </s>
+Target: 1Homologous Network Traffic –Encoder Only VPN Application Detection: 4500 0046 …
+IoT Malicious Detection: 4500 003c …
+Source Port Generation: 4500 0034 …
+Source IP Generation: 4500 0034 …...
+...Understanding
+GenerationVoIP Buster
+Benign
+443
+216.58.217.46
+Pre-training (T5) Fine-tuningTraffic 
+Tokenization
+Lens
+Figure 1: The overall framework of Lens . It consists of three parts: traffic tokenization, pre-training using the T5
+Architecture, and fine-tuning.
+their encoder-only architecture. Indeed, GPT-based models [ 29,30,3] excel in generation capability, but they only learn
+from previous information in a sequence without considering the following information. As a result, this unidirectional
+learning technique may not capture the global information of input data, impeding their capacity to fully understand
+network traffic. Thus, a pivotal question arises: how can we achieve good performance of both traffic understanding
+and generation within the scope of network traffic analysis?
+In this paper, we develop Lens , a foundation model that leverages the T5 architecture [31, 41] to learn the pre-trained
+representations from massive traffic data. Thanks to the encoder-decoder architecture of T5, the proposed model excels
+in both traffic understanding and traffic generalization. As illustrated in Fig. 1, the overall framework consists of
+three stages: tokenization, pre-training, and fine-tuning. During tokenization, to accommodate the diverse nature of
+traffic data, including both plaintext and encrypted information, we standardize different traffic types by converting
+their content into a hexadecimal format. Furthermore, we explore the impact of different tokenization methods, such
+as SentencePiece [ 15] and WordPiece [ 19], on model performance. At the pre-training stage, we design a new loss
+function that addresses three tasks, including Masked Span Prediction (MSP), Packet Order Prediction (POP), and
+Homologous Traffic Prediction (HTP), to better discern the latent patterns from various network traffic. Specifically,
+MSP serves as a denoising task that prompts Lens to recover masked tokens, thereby enabling the model to capture the
+representations within network traffic. POP predicts the order of packets within a single traffic input, facilitating the
+capture of latent features within the same session flow, where flow means a sequence of packets exchanged between
+two endpoints. Inspired by [19], HTP aids in identifying the relational patterns across different flows. For fine-tuning,
+we leverage task-oriented prompts coupled with a small amount of task-specific labeled data to precisely tune the
+parameters of Lens , making it effectively adaptive to various downstream tasks.
+We assess the performance of Lens in both understanding and generation tasks using 6 real-world datasets [ 9,11,40,
+37,25,27], including 15 traffic understanding tasks and 5 header fields generation tasks. Extensive experimental results
+show that Lens achieves an average accuracy improvement of 10.75% for packet level understanding tasks and 0.59%
+for flow level tasks, outperforming the baselines. Additionally, regarding traffic generation tasks, it outperforms the
+baselines in terms of Jensen–Shannon Divergence (JSD) and Total Variation Distance (TVD), reduced by an average of
+0.1353 and 0.0825, respectively. Finally, our method requires 50% ∼95% less labeled data for fine-tuning compared to
+the state-of-the-art approach.
+In summary, our contributions are four-fold: (1) we introduce Lens , the first large network traffic model using the T5
+architecture for traffic understanding and generation; (2) we explore the impact of different tokenization methods and
+their settings on the pre-training effectiveness; (3) we enhance the pre-training phase by integrating three specialized
+tasks, aiming to learn better representations from raw traffic data; (4) extensive experiments show the superiority of our
+model over baselines in various downstream tasks related to traffic understanding and generation.
+2 Related Work
+2.1 Network Traffic Understanding
+Classical Machine Learning Methods. Earlier works have employed classical machine learning methods to network
+traffic analysis. For example, Wang et al. [ 42] used the k-Nearest Neighbors (KNN) to identify attacks. CUMUL
+2APREPRINT - FEBRUARY 12, 2024
+[28] adopted SVM for network traffic identification, while APPScanner and BIND [ 36,1] used statistical features
+like temporality and packet size to train Random Forests classifiers for identification tasks. Besides, IsAnon [ 5] fused
+Modified Mutual Information and Random Forest (MMIRF) to filter out redundant features. However, these methods
+require expert knowledge for feature extraction and lack generalization capability.
+Deep Learning Techniques. Deep learning techniques have been introduced to provide a more automated approach to
+comprehending network traffic without human-designed features. DF [ 34], for example, devised Convolutional Neural
+Networks (CNN) for identifying a novel website fingerprinting attack. In addition, FS-Net [ 21,18] employed recurrent
+neural networks (RNN) and its variant LSTM [ 43,39] to classify network traffic. Recently, a method called DeepPacket
+[23] is introduced. It combined the stacked autoencoder (SAE) with CNN to identify and extract the important features
+for traffic classification tasks. However, these approaches rely heavily on large amounts of labeled data and have limited
+generalization ability.
+Pre-training Approaches. To improve model generalization ability, recent studies have adopted pre-training techniques
+to learn the representations from large-scale traffic data in an unsupervised manner. For instance, PERT [ 12] and
+ET-BERT [ 19] leveraged the pre-trained ALBERT [ 17] and BERT [ 8] models to learn the latent representations,
+respectively. However, these models are not applicable to traffic generation due to their encoder-only structure. Most
+recently, NetGPT [ 24] built on GPT-2 [ 30] has been developed for both traffic classification and generation in a
+generative way. However, it fails to capture the global information of input data due to its decoder-only framework,
+leading to sub-optimal performance on traffic understanding tasks [ 41]. Moreover, NetGPT1pre-trained on network
+traffic without removing IP addresses, which may result in a risk of privacy leakage. Lastly, it is only implemented on 8
+downstream tasks for traffic classification while our Lens is tested on 15 downstream tasks. Table 1 summarizes the
+comparison of the proposed Lens and other existing methods.
+Table 1: Comparison of the proposed Lens and existing pre-training methods. “Curated PT Func” denotes custom
+pre-training tasks for network traffic beyond the original task, while “IP Masking” means that all IP addresses and port
+numbers in the input should be anonymized or removed, and “GT” refers to the support of generation tasks.
+Method Encoder Decoder Curated PT Func IP Masking GT
+PERT [12] ✔ ✘ ✘ ✘ ✘
+ET-BERT [19] ✔ ✘ ✔ ✔ ✘
+NetGPT [24] ✘ ✔ ✘ ✘ ✔
+Lens (Ours) ✔ ✔ ✔ ✔ ✔
+2.2 Network Traffic Generation
+Tool-Based Traffic Generation. The classical traffic generation methods mainly focus on simulation tools and
+structure-based solutions. Simulation tools, such as NS-3 [ 13], yans [ 16], and DYNAMO [ 4], are based on varying
+network topology. Structure-based approaches like Iperf [ 2], Harpoon [ 35], and Swing [ 38] capture network patterns
+via heuristics. However, these traditional methods require vast domain expertise and might lack versatility. Moreover,
+tool-based traffic generation methods often result in rigid traffic patterns that may not accurately reflect the dynamic
+and stochastic nature of real-world network conditions. Consequently, they cannot effectively adapt to the evolving
+behaviors of cyber threats or user demands.
+GAN-Based Traffic Generation. In addition, some studies have employed Generative adversarial networks (GAN) to
+generate network traffic. Ring et al. [ 32] first suggested the use of GAN [ 10] for the simulation of flow-level traffic. The
+following works include NetShare [ 44] and DoppelGANger [ 20], and others [ 26,14]. For instance, NetShare generated
+packet and flow header traces for networking tasks, such as telemetry, anomaly detection, and provisioning. Though
+GAN-based methods are adaptive, their generated results may be inconsistent with target protocols [44].
+Pre-training-based Generation. Most recently, researchers employed pre-training technique for traffic generation.
+Only one work called NetGPT [ 24] has been developed to generate key header fields. However, NetGPT did not
+compare it with state-of-the-art methods like NetShare in the experiments. Thus, it is hard to assess its performance on
+generalization.
+1NetGPT is currently preprinted and not open-sourced, and we thus do not compare our method with it.
+3APREPRINT - FEBRUARY 12, 2024
+Decoder<ex_1 >
+Encoder𝒉</𝒔>𝑵𝒉<𝒑𝒌𝒕>𝑵𝒉𝟎𝟎𝟎𝟏𝑵𝒉<𝒑𝒌𝒕>𝑵𝒉𝟎𝟎𝟎𝟏𝑵𝒉<𝒆𝒙_𝟏>𝑵𝒉<𝒉𝒆𝒂𝒅>𝑵𝒉𝟎𝟎𝟒𝟔𝑵𝒉𝟒𝟓𝟎𝟎𝑵
+𝒉′𝑻−𝟏𝑵…
+T5 Encoder Block 1T5 Encoder Block 2T5 Encoder Block N -1
+…… ……… … …Packet Order
+PredictionHomologous 
+Traffic Prediction
+T5 Decoder Block 1T5 Decoder Block 2T5 Decoder Block N -1
+Output Embeddings or 
+Initialized Embeddings𝒉′𝟏𝑵𝒉′𝟐𝑵𝒉′𝟑𝑵𝒉′𝑻𝑵Decoder Linear Layer5e9c 0100 0664 </s> …
+…… ……
+4500 … 0046 <head > … 0001 <pkt>… 0001 <pkt> </s> <ex_1 >
+1 2 i-1 i i+1 j M-2 M-1 M
+1 1 1 0 0 0 0 0 0
+1 1 1 1 1 1 2 2 2+
++
+++
++
+++
++
+++
++
+++
++
+++
++
+++
++
+++
++
+++
++
++Token
+Embedding
+Positional 
+Embedding
+Header 
+Embedding
+Packet Seg 
+Embedding Input Traffic EmbeddingsDecoder Outputs
+Figure 2: The core architecture of Lens for pre-training, which consists of an encoder and decoder.
+Table 2: Accuracy of Masked Span Prediction across various tokenization strategies. The column headers “36,000”,
+“65,536”, and “80,000” denote the target vocabulary size.
+Method / Vocab. 36,000 65,536 80,000
+Vanilla Vocab - 56.70 -
+SentencePiece String 59.57 61.36 60.86
+SentencePiece Word 63.48 65.65 63.02
+WordPiece Word 64.86 66.22 -
+WordPiece Pd. 66.53 68.87 -
+3 Proposed Lens
+In this section, we will introduce Lens , a large network traffic model for both traffic understanding and generation.
+Fig. 1 illustrates the overall framework of the proposed model, consisting of three main stages: traffic tokenization,
+pre-training, and fine-tuning. In Section 3.1, we will describe three different tokenization approaches: Vanilla V ocab,
+SentencePiece [ 15], and WordPiece [ 8]. We try to figure out which one performs best in our experiments in Sec. 4.
+Then we will present the pre-training process that involves three tasks: Masked Span Prediction (MSP), Packet Order
+Prediction (POP), and Homologous Traffic Prediction (HTP) in Section 3.2. Lastly, Section 3.3 will focus on the
+fine-tuning of the pre-trained Lens on a small amount of labeled data.
+3.1 Traffic Tokenization
+In the following, we first introduce the data pre-processing method, then elaborate on our traffic tokenization strategy.
+3.1.1 Data pre-processing.
+Different from textual data, network traffic comprises heterogeneous headers and payloads that may contain either
+plaintext or encrypted data [ 33,6]. To ensure consistency in representation, it is crucial to standardize the input tokens
+for the model through a uniform approach.
+To address this challenge, we use the following steps to pre-process the traffic data. First, we extract the session flows
+from the raw traffic data saved in pcap files, as shown in Fig. 1. Specifically, we extract each session flow using fixed
+IP addresses and port numbers of the two communicating endpoints. To preserve data privacy, we anonymize these
+session flows by resetting both source and destination IPs and ports to a default value 0. When anonymization process
+is complete, we convert every session flow into a hexadecimal format to enhance data uniformity [ 19]. After data
+pre-processing, our next step involves traffic tokenization.
+4APREPRINT - FEBRUARY 12, 2024
+3.1.2 Tokenization.
+A well-designed tokenizer is critical for ensuring the successful training of a foundation model. It is often determined
+by three key factors: vocabulary size, input data patterns, and tokenization methods. Hence, we study the performance
+of three tokenization approaches with various settings on pre-training; namely Vanilla V ocab, SentencePiece [ 15],
+and WordPiece [ 8]. Vanilla V ocab splits the hex data into 4-digit words, creating a total vocabulary size of 65,536 by
+counting spans from 0x0000 to0xffff . SetencePiece, used in the original T5 model [ 31], is a tokenizer algorithm
+that works directly on raw text without requiring pre-defined word boundaries (like white spaces) to split the text into
+subwords. WordPiece, used in BERT [ 8], is another tokenization method that breaks words (not raw text) into smaller
+subword pieces. Both of these two methods tokenize the input text with trained pieces used as a vocabulary.
+As shown in Table 2, we further explore different settings for SentencePiece and WordPiece. Specifically, for
+SentencePiece, we examine two configurations: ‘SentencePiece String’, which processes an entire hex flow as a single
+string, and ‘SentencePiece Word’, which first divides hex flows into 4-digit words before treating it as a string. For
+WordPiece, we consider two settings: (i) ‘WordPiece Word’ splits the hex traffic into 4-digit words without using
+a predefined vocabulary; (ii) ‘WordPiece Pd.’ uses ‘Vanilla V ocab’ as the predefined vocabulary. This predefined
+vocabulary provides a standardized set of words that the algorithm can use to segment and recognize patterns in the
+data.
+In addition to the above regular tokens, we also add some special tokens </s> ,<pad> ,<unk> ,<tsk> ,<head> and
+<pkt> in the vocabulary to signal the model for specific purposes. Here we briefly explain the usage of each special
+token. The token </s> signals the end of an input sequence. At the fine-tuning stage, <tsk> is used to distinguish
+descriptions of downstream tasks from input traffic; <head> is employed to separate header fields from payloads.
+In addition, <pkt> is placed at the end of each packet to mark packet boundaries. Examples of tokenized input are
+presented in the traffic tokenization process in Fig. 1.
+Table 2 illustrates the comparison of pre-training accuracy for three tokenization approaches with different settings. We
+can observe that ‘WordPiece Pd.’ with a target vocabulary size of 65,536 achieves the highest accuracy. Therefore, we
+select this setting as the final tokenization algorithm to train our tokenizer for Lens .
+3.2 Pre-Training
+In this subsection, we will introduce the detailed pre-training process, as illustrated in Fig. 2. In short, we first
+present the input traffic embeddings by merging four different embeddings: token embedding, positional embedding,
+header embedding, and packet segment embedding. Then we design a novel objective function by incorporating three
+pre-training tasks: Masked Span Prediction, Packet Order Prediction, and Homologous Traffic Prediction.
+3.2.1 Embeddings
+As shown in figure 2, we represent the tokens derived from Traffic Tokenization using the embedding strategy by
+summing up four embedding types: token embedding, positional embedding, header embedding, and packet segment
+embedding. Note that the dimension of all embeddings is set to 768. The descriptions of each embedding are detailed
+below.
+Token Embedding is a high-dimensional vector that uniquely represents a token, acting as its exclusive identifier. Each
+token is strongly associated with a single distinct vector.
+Positional Embedding is used to maintain the contextual order within the input traffic data. Imagine a scenario where a
+token appears multiple times within the input data, but represents different meanings based on its position. Without
+marking its relative position, the distinct meanings of the token could converge, thus leading to ambiguity. Therefore,
+positional embedding is vital to guarantee that each instance of a token preserves its unique context according to its
+relative position.
+Header Embedding aims to differentiate between the header fields and payload information encapsulated within
+session flows. Unlike text in natural language, the header and payload information in traffic data exhibit distinct
+characteristics and serve different functions. Specifically, header fields contain the meta-information about packets like
+the protocol types and packet length. Thus, we use header embedding to accurately represent their distinct functions.
+Packet Segment Embedding is employed to differentiate each packet within a single flow, given that packets may
+not inherently share semantic associations. Furthermore, maintaining the order of packets is essential to preserve the
+temporal sequence of events in a session flow. Therefore, we employ this embedding to ensure that each packet is
+effectively learned with a focus on its distinctiveness and its position in the sequence of a flow.
+5
+INFO:root:--------------------
+INFO:root:Bahubali is thinking...
+INFO:root:Done
+INFO:root:[blue]Bahubali: 
+INFO:root:The paper titled "Lens: A Foundation Model for Network Traffic" focuses on the development of a foundational network traffic model called Lens for network traffic understanding and generation in cybersecurity. The paper addresses the challenge of analyzing network traffic, which is crucial for network security and management, due to the diverse nature of data packets with heterogeneous headers and encrypted payloads lacking semantics.
+
+Key Points:
+1. **Model Description**: Lens leverages the T5 architecture to learn pre-trained representations from large-scale unlabeled data. The model excels in both traffic understanding (classification) and traffic generation tasks.
+2. **Pre-Training**: Lens uses a novel loss function that combines three tasks: Masked Span Prediction (MSP), Packet Order Prediction (POP), and Homologous Traffic Prediction (HTP) to better learn representations from raw data.
+3. **Tokenization**: Different tokenization methods are explored, including Vanilla Vocab, SentencePiece, and WordPiece, with WordPiece achieving the highest accuracy.
+4. **Evaluation**: Lens outperforms baselines in various downstream tasks related to traffic understanding and generation. It requires much less labeled data for fine-tuning compared to current methods.
+5. **Contributions**: The paper introduces Lens as the first large network traffic model using the T5 architecture for traffic understanding and generation. It explores different tokenization methods and enhances pre-training effectiveness with specialized tasks.
+
+The paper provides a detailed overview of the challenges in network traffic analysis, the proposed Lens model architecture, pre-training process, tokenization strategies, and evaluation results. It aims to improve the understanding and generation of network traffic data for enhanced network security and management.
+INFO:root:Done
+INFO:root:[green]User: 
+INFO:root:Bahubali is thinking...
+INFO:root:Done
+INFO:root:[blue]Bahubali: 
+INFO:root:{"name":"google_search", "arguments":{"query":"A Foundation Model for Network Traffic PDF"}}
+
+INFO:root:Calling function: google_search ...
